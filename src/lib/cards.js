@@ -4,23 +4,22 @@ import matter from 'gray-matter';
 
 const dataDirectory = path.join(process.cwd(), 'src/data');
 
-export function getCategoryData(category) {
-  const categoryDir = path.join(dataDirectory, category);
+export function getAllDaysData() {
+  if (!fs.existsSync(dataDirectory)) return [];
 
-  if (!fs.existsSync(categoryDir)) {
-    return [];
-  }
-
-  const fileNames = fs.readdirSync(categoryDir);
-  const sortedFileNames = fileNames
+  const fileNames = fs.readdirSync(dataDirectory);
+  const mdFiles = fileNames
     .filter((fileName) => fileName.endsWith('.md'))
     .sort();
 
   let allCards = [];
   let globalId = 1;
 
-  for (const fileName of sortedFileNames) {
-    const fullPath = path.join(categoryDir, fileName);
+  for (const fileName of mdFiles) {
+    const dayMatch = fileName.match(/\d+/);
+    const dayNumber = dayMatch ? parseInt(dayMatch[0], 10) : 1;
+
+    const fullPath = path.join(dataDirectory, fileName);
     const fileContents = fs.readFileSync(fullPath, 'utf8');
     const { data } = matter(fileContents);
 
@@ -29,7 +28,7 @@ export function getCategoryData(category) {
         allCards.push({
           ...item,
           id: globalId++,
-          sourceFile: fileName,
+          day: dayNumber,
         });
       });
     }
