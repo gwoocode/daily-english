@@ -20,22 +20,20 @@ export default function MainView({ allCards }) {
     return Math.max(...allCards.map((item) => item.day || 1));
   }, [allCards]);
 
-  // 선택된 Day 카드 및 북마크 필터링 (해당 날짜 조건 추가)
+  // 선택된 Day 카드 및 북마크 필터링
   const filteredList = useMemo(() => {
     if (!allCards) return [];
     
-    // 북마크 전용 모드: 현재 선택된 Day의 북마크 단어만 필터링
     if (showOnlyBookmarks) {
       return allCards.filter(
         (item) => item.day === selectedDay && bookmarks.includes(item.id)
       );
     }
 
-    // 일반 Day 선택 모드
     return allCards.filter((item) => item.day === selectedDay);
   }, [allCards, selectedDay, showOnlyBookmarks, bookmarks]);
 
-  // Day, 필터 모드, 셔플 모드가 변경될 때만 리스트 재구성 및 인덱스 초기화
+  // Day, 필터 모드, 셔플 모드가 바뀔 때만 리스트 재구성 및 인덱스 초기화 (filteredList 제거)
   useEffect(() => {
     if (isRandom) {
       const listCopy = [...filteredList];
@@ -48,7 +46,14 @@ export default function MainView({ allCards }) {
       setShuffledList(filteredList);
     }
     setCurrentIndex(0);
-  }, [selectedDay, showOnlyBookmarks, isRandom, filteredList]);
+  }, [selectedDay, showOnlyBookmarks, isRandom]);
+
+  // 일반 모드에서 북마크 토글 시 인덱스 유지하며 셔플리스트 업데이트
+  useEffect(() => {
+    if (!showOnlyBookmarks) {
+      setShuffledList(filteredList);
+    }
+  }, [filteredList, showOnlyBookmarks]);
 
   const currentItem = shuffledList[currentIndex];
 
@@ -129,7 +134,7 @@ export default function MainView({ allCards }) {
       {currentItem ? (
         <>
           <Flashcard
-            key={`${activeTab}-${currentItem.id}-${isRandom}`}
+            key={`${activeTab}-${currentItem.id}`}
             type={activeTab}
             item={currentItem}
             isBookmarked={isBookmarked(currentItem.id)}
