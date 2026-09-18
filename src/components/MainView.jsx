@@ -20,18 +20,20 @@ export default function MainView({ allCards }) {
     return Math.max(...allCards.map((item) => item.day || 1));
   }, [allCards]);
 
-  // 선택된 Day 카드 및 북마크 필터링
+  // 선택된 Day 카드 및 북마크 필터링 (해당 날짜 조건 추가)
   const filteredList = useMemo(() => {
     if (!allCards) return [];
     
-    // 북마크 전용 모드
+    // 북마크 전용 모드: 현재 선택된 Day의 북마크 단어만 필터링
     if (showOnlyBookmarks) {
-      return allCards.filter((item) => bookmarks.includes(item.id));
+      return allCards.filter(
+        (item) => item.day === selectedDay && bookmarks.includes(item.id)
+      );
     }
 
     // 일반 Day 선택 모드
     return allCards.filter((item) => item.day === selectedDay);
-  }, [allCards, selectedDay, showOnlyBookmarks]);
+  }, [allCards, selectedDay, showOnlyBookmarks, bookmarks]);
 
   // Day, 필터 모드, 셔플 모드가 변경될 때만 리스트 재구성 및 인덱스 초기화
   useEffect(() => {
@@ -46,7 +48,7 @@ export default function MainView({ allCards }) {
       setShuffledList(filteredList);
     }
     setCurrentIndex(0);
-  }, [selectedDay, showOnlyBookmarks, isRandom]);
+  }, [selectedDay, showOnlyBookmarks, isRandom, filteredList]);
 
   const currentItem = shuffledList[currentIndex];
 
@@ -162,7 +164,7 @@ export default function MainView({ allCards }) {
       ) : (
         <p className="no-data-text">
           {showOnlyBookmarks 
-            ? '북마크된 단어가 없습니다. 카드의 ★을 눌러 등록해보세요!' 
+            ? `Day ${selectedDay}에 북마크된 단어가 없습니다.` 
             : '데이터가 존재하지 않습니다.'}
         </p>
       )}
