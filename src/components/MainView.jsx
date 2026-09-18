@@ -2,13 +2,17 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import Flashcard from './Flashcard';
+import { useBookmarks } from '../hooks/useBookmarks';
 
 export default function MainView({ allCards }) {
   const [activeTab, setActiveTab] = useState('shadowing');
   const [selectedDay, setSelectedDay] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isRandom, setIsRandom] = useState(false);
+  const [showOnlyBookmarks, setShowOnlyBookmarks] = useState(false);
   const [shuffledList, setShuffledList] = useState([]);
+
+  const { bookmarks, toggleBookmark, isBookmarked } = useBookmarks();
 
   // 전체 Day 수 계산
   const totalDays = useMemo(() => {
@@ -16,13 +20,20 @@ export default function MainView({ allCards }) {
     return Math.max(...allCards.map((item) => item.day || 1));
   }, [allCards]);
 
-  // 선택된 단일 Day 카드 필터링
+  // 선택된 Day 카드 및 북마크 필터링
   const filteredList = useMemo(() => {
     if (!allCards) return [];
-    return allCards.filter((item) => item.day === selectedDay);
-  }, [allCards, selectedDay]);
+    
+    // 북마크 전용 모드
+    if (showOnlyBookmarks) {
+      return allCards.filter((item) => bookmarks.includes(item.id));
+    }
 
-  // 랜덤 셔플 및 인덱스 초기화
+    // 일반 Day 선택 모드
+    return allCards.filter((item) => item.day === selectedDay);
+  }, [allCards, selectedDay, showOnlyBookmarks]);
+
+  // Day, 필터 모드, 셔플 모드가 변경될 때만 리스트 재구성 및 인덱스 초기화
   useEffect(() => {
     if (isRandom) {
       const listCopy = [...filteredList];
@@ -35,7 +46,7 @@ export default function MainView({ allCards }) {
       setShuffledList(filteredList);
     }
     setCurrentIndex(0);
-  }, [filteredList, isRandom]);
+  }, [selectedDay, showOnlyBookmarks, isRandom]);
 
   const currentItem = shuffledList[currentIndex];
 
@@ -75,7 +86,7 @@ export default function MainView({ allCards }) {
         </button>
       </div>
 
-      {/* 상단 옵션 바 (Day 단일 선택) */}
+      {/* 상단 옵션 바 */}
       <div className="options-bar">
         <div className="day-select-group">
           <select
@@ -91,12 +102,25 @@ export default function MainView({ allCards }) {
           </select>
         </div>
 
-        <button
-          onClick={() => setIsRandom(!isRandom)}
-          className={`shuffle-button ${isRandom ? 'active' : ''}`}
-        >
-          🎲 {isRandom ? 'Random' : 'Order'}
-        </button>
+        <div className="options-button-group">
+          {/* 북마크 모드 필터 버튼 */}
+          <button
+            onClick={() => setShowOnlyBookmarks(!showOnlyBookmarks)}
+            className={`shuffle-button bookmark-filter-button ${showOnlyBookmarks ? 'active' : ''}`}
+          >
+            ★
+          </button>
+
+          {/* 랜덤/순서 버튼 */}
+          <button
+            onClick={() => setIsRandom(!isRandom)}
+            className={`shuffle-button ${isRandom ? 'active' : ''}`}
+          >
+            <span className="material-icons">
+              {isRandom ? 'shuffle' : 'repeat'}
+            </span>
+          </button>
+        </div>
       </div>
 
       {/* 카드 콘텐츠 및 하단 컨트롤 */}
@@ -106,9 +130,11 @@ export default function MainView({ allCards }) {
             key={`${activeTab}-${currentItem.id}-${isRandom}`}
             type={activeTab}
             item={currentItem}
+            isBookmarked={isBookmarked(currentItem.id)}
+            toggleBookmark={toggleBookmark}
           />
 
-          {/* 하단 내비게이션 (카운터 하단에 미니 프로그레스 바 매립) */}
+          {/* 하단 내비게이션 */}
           <div className="bottom-nav">
             <button onClick={handlePrev} className="nav-button">
               ← Prev
@@ -134,8 +160,10 @@ export default function MainView({ allCards }) {
           </div>
         </>
       ) : (
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 0' }}>
-          데이터가 존재하지 않습니다.
+        <p className="no-data-text">
+          {showOnlyBookmarks 
+            ? '북마크된 단어가 없습니다. 카드의 ★을 눌러 등록해보세요!' 
+            : '데이터가 존재하지 않습니다.'}
         </p>
       )}
     </div>

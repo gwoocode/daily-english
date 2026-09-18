@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 
-export default function Flashcard({ type, item }) {
+export default function Flashcard({ type, item, isBookmarked, toggleBookmark }) {
   const [isFlipped, setIsFlipped] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
@@ -28,6 +28,11 @@ export default function Flashcard({ type, item }) {
     }
   };
 
+  const handleBookmarkClick = (e) => {
+    e.stopPropagation(); // 카드 뒤집힘 방지
+    toggleBookmark(item.id);
+  };
+
   const firstExample = examplesList[0] || { eng: '', kor: '' };
 
   return (
@@ -36,7 +41,25 @@ export default function Flashcard({ type, item }) {
         
         {/* 앞면 */}
         <div className="card-front">
-          <div className="badge-label">FRONT</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <span className="badge-label">FRONT</span>
+            <button
+              onClick={handleBookmarkClick}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '18px',
+                color: isBookmarked ? '#ffd700' : '#8e918f',
+                padding: '0 4px',
+                transition: 'transform 0.1s ease'
+              }}
+              title="북마크 토글"
+            >
+              {isBookmarked ? '★' : '☆'}
+            </button>
+          </div>
+
           <div className="card-content-center">
             {type === 'shadowing' && (
               <>
@@ -67,7 +90,23 @@ export default function Flashcard({ type, item }) {
 
         {/* 뒷면 */}
         <div className="card-back">
-          <div className="badge-label">ANSWER & DETAILS</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <span className="badge-label">ANSWER & DETAILS</span>
+            <button
+              onClick={handleBookmarkClick}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '18px',
+                color: isBookmarked ? '#ffd700' : '#8e918f',
+                padding: '0 4px'
+              }}
+            >
+              {isBookmarked ? '★' : '☆'}
+            </button>
+          </div>
+
           <div className="card-content-center">
             {type === 'shadowing' && (
               <p className="text-body">{firstExample.kor}</p>

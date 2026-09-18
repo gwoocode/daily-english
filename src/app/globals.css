@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 @import "tailwindcss";
 
 /* Google Gemini 테마 변수 정의 */
@@ -385,4 +386,34 @@ body {
   background-color: var(--text-main);
   transition: width 0.3s cubic-bezier(0.2, 0, 0, 1);
   border-radius: var(--radius-pill);
+}
+
+
+/* ------------------------ */
+/* 셔플 아이콘 */
+/* ------------------------ */
+
+/* 옵션 바 우측 버튼 그룹 통일 */
+.options-button-group {
+  display: flex;
+  gap: 8px;
+}
+
+/* 셔플 / 반복 버튼 공통 스타일 및 플렉스 정렬 */
+.shuffle-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* 북마크 활성화 상태 스타일 */
+.bookmark-filter-button.active {
+  border-color: #ffd700;
+  color: #ffd700;
+}
+
+/* 머티리얼 아이콘 텍스트 드래그 방지 및 규격 */
+.shuffle-button .material-icons {
+  font-size: 15px;
+  user-select: none;
 }
