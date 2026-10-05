@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Flashcard from './Flashcard';
 import { useBookmarks } from '../hooks/useBookmarks';
 
@@ -12,6 +12,9 @@ export default function MainView({ allCards }) {
   const [showOnlyBookmarks, setShowOnlyBookmarks] = useState(false);
   const [shuffledList, setShuffledList] = useState([]);
 
+  // 전체 카드에 대한 랜덤 셔플 순서를 고정 유지하기 위한 Ref
+  const randomOrderRef = useRef([]);
+
   const { bookmarks, toggleBookmark, isBookmarked } = useBookmarks();
 
   // 전체 Day 수 계산
@@ -20,53 +23,38 @@ export default function MainView({ allCards }) {
     return Math.max(...allCards.map((item) => item.day || 1));
   }, [allCards]);
 
-  // 선택된 Day 카드 및 북마크 필터링
-  const filteredList = useMemo(() => {
+  // 해당 Day의 전체 카드 리스트
+  const dayCards = useMemo(() => {
     if (!allCards) return [];
-    
-    if (showOnlyBookmarks) {
-      return allCards.filter(
-        (item) => item.day === selectedDay && bookmarks.includes(item.id)
-      );
-    }
-
     return allCards.filter((item) => item.day === selectedDay);
-  }, [allCards, selectedDay, showOnlyBookmarks, bookmarks]);
+  }, [allCards, selectedDay]);
 
-  // 1. Day, 필터 모드, 셔플 토글 시 리스트 재구성 및 인덱스 초기화
+  // 1. Day가 변경되거나 '랜덤 버튼'을 직접 눌렀을 때만 셔플 순서 새로 생성
   useEffect(() => {
     if (isRandom) {
-      const listCopy = [...filteredList];
+      const listCopy = [...dayCards];
       for (let i = listCopy.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [listCopy[i], listCopy[j]] = [listCopy[j], listCopy[i]];
       }
-      setShuffledList(listCopy);
+      randomOrderRef.current = listCopy;
     } else {
-      setShuffledList(filteredList);
+      randomOrderRef.current = dayCards;
     }
     setCurrentIndex(0);
-  }, [selectedDay, showOnlyBookmarks, isRandom]);
+  }, [selectedDay, isRandom, dayCards]);
 
-  // 2. 일반 모드에서 북마크 토글 시: 현재 보고 있던 랜덤/순서 상태를 유지하며 리스트 갱신
+  // 2. 셔플된 기준 순서(randomOrderRef)에서 북마크 필터링만 적용
   useEffect(() => {
-    if (!showOnlyBookmarks) {
-      if (isRandom) {
-        // 랜덤 모드일 때는 기존 shuffledList에 현재 filteredList 항목들을 유지하도록 업데이트
-        setShuffledList((prevShuffled) => {
-          const currentIds = new Set(filteredList.map((item) => item.id));
-          const updated = prevShuffled.filter((item) => currentIds.has(item.id));
-          
-          // 새로 추가된 카드가 있다면 끝에 추가
-          const existingIds = new Set(updated.map((item) => item.id));
-          const newItems = filteredList.filter((item) => !existingIds.has(item.id));
-          return [...updated, ...newItems];
-        });
-      } else {
-        setShuffledList(filteredList);
-      }
+    const baseList = isRandom ? randomOrderRef.current : dayCards;
+    
+    let result = baseList;
+    if (showOnlyBookmarks) {
+      result = baseList.filter((item) => bookmarks.includes(item.id));
     }
-  }, [filteredList, showOnlyBookmarks, isRandom]);
+    
+    setShuffledList(result);
+  }, [dayCards, isRandom, showOnlyBookmarks, bookmarks]);
 
   const currentItem = shuffledList[currentIndex];
 
@@ -125,7 +113,10 @@ export default function MainView({ allCards }) {
         <div className="options-button-group">
           {/* 북마크 모드 필터 버튼 */}
           <button
-            onClick={() => setShowOnlyBookmarks(!showOnlyBookmarks)}
+            onClick={() => {
+              setShowOnlyBookmarks(!showOnlyBookmarks);
+              setCurrentIndex(0); // 필터 켜고 끌 때는 첫 번째부터 보기
+            }}
             className={`shuffle-button bookmark-filter-button ${showOnlyBookmarks ? 'active' : ''}`}
           >
             ★
