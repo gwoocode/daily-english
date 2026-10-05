@@ -33,7 +33,7 @@ export default function MainView({ allCards }) {
     return allCards.filter((item) => item.day === selectedDay);
   }, [allCards, selectedDay, showOnlyBookmarks, bookmarks]);
 
-  // Day, 필터 모드, 셔플 모드가 바뀔 때만 리스트 재구성 및 인덱스 초기화 (filteredList 제거)
+  // 1. Day, 필터 모드, 셔플 토글 시 리스트 재구성 및 인덱스 초기화
   useEffect(() => {
     if (isRandom) {
       const listCopy = [...filteredList];
@@ -48,12 +48,25 @@ export default function MainView({ allCards }) {
     setCurrentIndex(0);
   }, [selectedDay, showOnlyBookmarks, isRandom]);
 
-  // 일반 모드에서 북마크 토글 시 인덱스 유지하며 셔플리스트 업데이트
+  // 2. 일반 모드에서 북마크 토글 시: 현재 보고 있던 랜덤/순서 상태를 유지하며 리스트 갱신
   useEffect(() => {
     if (!showOnlyBookmarks) {
-      setShuffledList(filteredList);
+      if (isRandom) {
+        // 랜덤 모드일 때는 기존 shuffledList에 현재 filteredList 항목들을 유지하도록 업데이트
+        setShuffledList((prevShuffled) => {
+          const currentIds = new Set(filteredList.map((item) => item.id));
+          const updated = prevShuffled.filter((item) => currentIds.has(item.id));
+          
+          // 새로 추가된 카드가 있다면 끝에 추가
+          const existingIds = new Set(updated.map((item) => item.id));
+          const newItems = filteredList.filter((item) => !existingIds.has(item.id));
+          return [...updated, ...newItems];
+        });
+      } else {
+        setShuffledList(filteredList);
+      }
     }
-  }, [filteredList, showOnlyBookmarks]);
+  }, [filteredList, showOnlyBookmarks, isRandom]);
 
   const currentItem = shuffledList[currentIndex];
 
